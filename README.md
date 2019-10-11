@@ -192,7 +192,7 @@ tarantool kv.lua 127.0.0.1 8080
 
 
 
-##Examples of JSON:
+## Examples of JSON:
 
 * **POST:**
 
