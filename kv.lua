@@ -52,7 +52,7 @@ local httpd = router.new()
 server:set_router(httpd)
 
 httpd:route({ path = '/kv/:id', method = 'GET' },hdl.get)
-httpd:route({ path = '/kv/:id', method = 'DELETE' }, hdl.del,rps_lmt)
+httpd:route({ path = '/kv/:id', method = 'DELETE' }, hdl.del)
 httpd:route({ path = '/kv/:id', method = 'PUT' }, hdl.put)
 httpd:route({ path = '/kv', method = 'POST' },hdl.post,2)
 httpd:hook('after_dispatch', function(req, rsp)
