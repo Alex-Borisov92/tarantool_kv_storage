@@ -64,14 +64,14 @@ end
 log.info('creating http-server...')
 local server = srv.new(host, port,{ log_requests = true })
 
-local httpd = router.new({charset = 'application/json'})
+local httpd = router.new()
 server:set_router(router)
-httpd:hook('after_dispatch', function(req, rsp)
+
 httpd:route({ path = '/kv/:id', method = 'GET' }, hdl.get)
 httpd:route({ path = '/kv/:id', method = 'DELETE' }, hdl.del)
 httpd:route({ path = '/kv/:id', method = 'PUT' }, hdl.put)
 httpd:route({ path = '/kv', method = 'POST' }, hdl.post)
-
+httpd:hook('after_dispatch', function(req, rsp)
 	-- log all correct operations
 	log.info(string.format("%s %s %s %s", rsp.status, req.method, req.path, req:read_cached()))
 end)
