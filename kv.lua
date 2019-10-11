@@ -3,7 +3,7 @@ local box     = require('box')
 local log     = require('log')
 local storage = require('core.storage')
 local handler = require('core.handler')
-local srv  = require('http.server')
+local srv  	  = require('http.server')
 local router  = require('http.router')
 
 
@@ -67,10 +67,10 @@ local server = srv.new(host, port,{ log_requests = true })
 local httpd = router.new({charset = 'application/json'})
 server:set_router(router)
 httpd:hook('after_dispatch', function(req, rsp)
-httpd:route({ path = '/kv/:id', method = 'GET' }, limited_rps(hdl.get,rps_lmt))
-httpd:route({ path = '/kv/:id', method = 'DELETE' }, limited_rps(hdl.del,rps_lmt))
-httpd:route({ path = '/kv/:id', method = 'PUT' }, limited_rps(hdl.put, rps_lmt))
-httpd:route({ path = '/kv', method = 'POST' }, limited_rps(hdl.post,rps_lmt))
+httpd:route({ path = '/kv/:id', method = 'GET' }, hdl.get)
+httpd:route({ path = '/kv/:id', method = 'DELETE' }, hdl.del)
+httpd:route({ path = '/kv/:id', method = 'PUT' }, hdl.put)
+httpd:route({ path = '/kv', method = 'POST' }, hdl.post)
 
 	-- log all correct operations
 	log.info(string.format("%s %s %s %s", rsp.status, req.method, req.path, req:read_cached()))
