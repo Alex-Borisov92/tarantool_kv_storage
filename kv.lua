@@ -6,8 +6,6 @@ local handler       = require('core.handler')
 local srv  	        = require('http.server')
 local router        = require('http.router')
 local os 	        = require('os')
---local storage_count = require('core.storage_count')
-
 
 
 -- init storage
@@ -37,7 +35,7 @@ local kv = storage.new(space)
 
 -- init temp-storage
 log.info('creating temp-storage...')
---local tmp = storage_count.new_t(temp_scheme)
+
 
 -- init http-handler
 log.info('creating http-handler...')
@@ -59,8 +57,6 @@ function kv.get_space()
 end
 
 
-
---TODO finish it - doesnt work
 
 -- Model storing requests count for ip and ts
 local request_count = {
