@@ -1,11 +1,12 @@
 -- import
-local box     = require('box')
-local log     = require('log')
-local storage = require('core.storage')
-local handler = require('core.handler')
-local srv  	  = require('http.server')
-local router  = require('http.router')
-local os 	  = require('os')
+local box           = require('box')
+local log           = require('log')
+local storage       = require('core.storage')
+local handler       = require('core.handler')
+local srv  	        = require('http.server')
+local router        = require('http.router')
+local os 	        = require('os')
+local storage_count = require('core.storage_count')
 
 -- init storage
 log.info('creating box-storage...')
@@ -47,7 +48,7 @@ local kv = storage.new(space)
 
 -- init temp-storage
 log.info('creating temp-storage...')
-local tmp = storage.new_t(temp_scheme)
+local tmp = storage_count.new_t(temp_scheme)
 
 -- init http-handler
 log.info('creating http-handler...')
@@ -74,23 +75,21 @@ function tmp.get_spc()
 end
 
 
-function limited_rps(handler, rps_limit)
+local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        function limit()
-            if tmp.get_spc() then
-                if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
-                    local resp = req:render({text = 'Too Many Requests'})
-                    resp.status = 429
-                    return resp
-                end
+        if tmp.get_spc() then
+            if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
+                local resp = req:render({text = 'Too Many Requests'})
+                resp.status = 429
+                return resp
             end
         end
-        pcall(limit)
+            tmp.get_space():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
+            return handler(req)
+
         end
-        tmp.get_space():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
-        return handler(req)
-    end
+end
 
 log.info('creating http-server...')
 local server = srv.new(host, port,{ log_requests = true })
