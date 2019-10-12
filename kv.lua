@@ -85,7 +85,7 @@ local function limited_rps(handler, rps_limit)
                 return resp
             end
         end
-            tmp.get_space():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
+            tmp.get_spc():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
             return handler(req)
 
         end
