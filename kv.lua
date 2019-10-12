@@ -25,6 +25,7 @@ space:create_index('primary', {
 	parts         = { { 'key', 'string' } }
 })
 local temp_scheme = box.schema.space.create('request_count', {
+        field_count   = 3,
         if_not_exists = true,
         temporary = true,
 
@@ -45,9 +46,6 @@ temp_scheme:create_index('primary', {
 log.info('creating kv-storage...')
 local kv = storage.new(space)
 
--- init request_count-storage
-log.info('creating request_count-storage...')
-local temp_scheme = storage.new(temp_scheme)
 
 
 -- init http-handler
@@ -75,6 +73,8 @@ function temp_scheme.get_space()
 end
 
 
+
+
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
@@ -82,7 +82,8 @@ local function limited_rps(handler, rps_limit)
 
         local rows = temp_scheme.get_space():select(
                 {req.peer.host,
-                 ts})
+                 ts}
+                )
         if #rows ~= 0 and rows[1][temp_scheme.cnt] == rps_limit then
             local resp = req:render({text = 'Too Many Requests'})
             resp.status = 429
