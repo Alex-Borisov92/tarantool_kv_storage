@@ -8,7 +8,6 @@ setmetatable(temp_storage, {
 		return cls.new(...)
 	end,
 })
-
 --- Create new TEMP instance
 ---@param space table
 ---@return temp_storage
@@ -18,13 +17,20 @@ function temp_storage.new_t(space)
 	return self
 end
 
-
 --- Add value
 ---@param key string
 ---@param val any
 ---@return void
 function temp_storage:add(key, val)
 	return pcall(self.space.insert, self.space, { key, val })
+end
+
+--- Set value
+---@param key string
+---@param val any
+---@return void
+function temp_storage:set(key, val)
+	return self.space:update(key, { { '=', 2, val } })
 end
 
 --- Get value

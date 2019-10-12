@@ -8,9 +8,6 @@ setmetatable(KVStorage, {
 		return cls.new(...)
 	end,
 })
-
-
-
 --- Create new instance
 ---@param space table
 ---@return KVStorage

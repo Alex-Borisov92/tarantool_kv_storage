@@ -6,7 +6,9 @@ local handler       = require('core.handler')
 local srv  	        = require('http.server')
 local router        = require('http.router')
 local os 	        = require('os')
-local storage_count = require('core.storage_count')
+--local storage_count = require('core.storage_count')
+
+
 
 -- init storage
 log.info('creating box-storage...')
@@ -25,22 +27,9 @@ space:create_index('primary', {
 	if_not_exists = true,
 	parts         = { { 'key', 'string' } }
 })
-local temp_scheme = box.schema.space.create('request_count', {
-        field_count   = 3,
-        if_not_exists = true,
-        temporary = true,
-    })
-temp_scheme:format({
-         {name = 'ip', type = 'string'},
-         {name = 'ts', type = 'unsigned'},
-         {name = 'cnt', type = 'number'}
-         }
-)
-temp_scheme:create_index('primary', {
-        type = 'hash',
-        parts = {1, 'string', 2, 'unsigned', 3, 'number'},
-        if_not_exists = true,
-    })
+
+
+
 
 -- init kv-storage
 log.info('creating kv-storage...')
@@ -48,7 +37,7 @@ local kv = storage.new(space)
 
 -- init temp-storage
 log.info('creating temp-storage...')
-local tmp = storage_count.new_t(temp_scheme)
+--local tmp = storage_count.new_t(temp_scheme)
 
 -- init http-handler
 log.info('creating http-handler...')
@@ -70,27 +59,46 @@ function kv.get_space()
 end
 
 
-function tmp.get_spc()
-    return box.space[tmp.space_name]
-end
 
 
-local function limited_rps(handler, rps_limit)
+-- Model storing requests count for ip and ts
+local request_count = {
+    space_name = 'request_count',
+    model = {
+        ip = 1,
+        ts = 2,
+        cnt = 3,
+    },
+}
+
+test_scheme = box.schema.space.create(request_count.space_name, {
+    if_not_exists = true,
+    temporary = true,
+})
+test_scheme:create_index('primary', {
+    type = 'hash',
+    parts = {request_count.model.ip, 'string', request_count.model.ts, 'unsigned'},
+    if_not_exists = true,
+})
+
+
+
+
+
+
+function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        if tmp.get_spc() then
-            if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
-                local resp = req:render({text = 'Too Many Requests'})
-                resp.status = 429
-                return resp
-            end
+        local rows = box.space[request_count.space_name]:select({req.peer.host, ts})
+        if #rows ~= 0 and rows[1][request_count.model.cnt] == rps_limit then
+            local resp = req:render({text = 'Too Many Requests'})
+            resp.status = 429
+            return resp
         end
-            tmp.get_spc():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
-            return handler(req)
-
-        end
+        box.space[request_count.space_name]:upsert({req.peer.host, ts, 1}, {{'+', request_count.model.cnt, 1}})
+        return handler(req)
+    end
 end
-
 log.info('creating http-server...')
 local server = srv.new(host, port,{ log_requests = true })
 
