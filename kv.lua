@@ -24,10 +24,28 @@ space:create_index('primary', {
 	if_not_exists = true,
 	parts         = { { 'key', 'string' } }
 })
-
+local temp_scheme = box.schema.space.create('request_count', {
+        if_not_exists = true,
+        temporary = true,
+            model = {
+                ip = 1,
+                ts = 2,
+                cnt = 3,
+    },
+    })
+temp_scheme:create_index('primary', {
+        type = 'hash',
+        parts = {request_count.model.ip, 'string', request_count.model.ts, 'unsigned'},
+        if_not_exists = true,
+    })
 -- init kv-storage
 log.info('creating kv-storage...')
 local kv = storage.new(space)
+
+-- init request_count-storage
+log.info('creating request_count-storage...')
+local temp_scheme = storage.new(temp_scheme)
+
 
 -- init http-handler
 log.info('creating http-handler...')
@@ -49,44 +67,22 @@ function kv.get_space()
 end
 
 
--- Creating temp db for counter
-local request_count = {
-    space_name = 'request_count',
-    model = {
-        ip = 1,
-        ts = 2,
-        cnt = 3,
-    },
-}
-
-function request_count.create_db()
-    local space = box.schema.space.create(request_count.space_name, {
-        if_not_exists = true,
-        temporary = true,
-    })
-    space:create_index('primary', {
-        type = 'hash',
-        parts = {request_count.model.ip, 'string', request_count.model.ts, 'unsigned'},
-        if_not_exists = true,
-    })
-end
-
-function request_count.get_space()
-    return box.space[request_count.space_name]
+function temp_scheme.get_space()
+    return box.space[temp_scheme.space_name]
 end
 
 
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        local rows = request_count.get_space():select({req.peer.host, ts})
-        if #rows ~= 0 and rows[1][request_count.model.cnt] == rps_limit then
+        local rows = temp_scheme.get_space():select({req.peer.host, ts})
+        if #rows ~= 0 and rows[1][temp_scheme.model.cnt] == rps_limit then
             local resp = req:render({text = 'Too Many Requests'})
             resp.status = 429
             return resp
         end
-        request_count.get_space():upsert({req.peer.host, ts, 1}, {{'+', request_count.model.cnt, 1}})
-        return handler
+        temp_scheme.get_space():upsert({req.peer.host, ts, 1}, {{'+', temp_scheme.model.cnt, 1}})
+        return handler(req)
     end
 end
 
