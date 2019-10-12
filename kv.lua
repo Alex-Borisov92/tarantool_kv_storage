@@ -78,13 +78,15 @@ end
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        local rows = temp_scheme.get_space():select({req.peer.host, ts})
+        local rows = temp_scheme.get_space():select(
+                {req.peer.host,
+                 ts})
         if #rows ~= 0 and rows[1][temp_scheme.cnt] == rps_limit then
             local resp = req:render({text = 'Too Many Requests'})
             resp.status = 429
             return resp
         end
-        temp_scheme.get_space():upsert({req.peer.host, ts, 1}, {{'+', temp_scheme.model.cnt, 1}})
+        temp_scheme.get_space():upsert({req.peer.host, ts, 1}, {{'+', temp_scheme.cnt, 1}})
         return handler(req)
     end
 end
