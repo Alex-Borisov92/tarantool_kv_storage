@@ -74,7 +74,7 @@ function tmp.get_spc()
 end
 
 
-local function limited_rps(handler, rps_limit)
+function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
         function limit()
@@ -91,7 +91,6 @@ local function limited_rps(handler, rps_limit)
         tmp.get_space():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
         return handler(req)
     end
-end
 
 log.info('creating http-server...')
 local server = srv.new(host, port,{ log_requests = true })
