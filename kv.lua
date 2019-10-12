@@ -27,11 +27,7 @@ space:create_index('primary', {
 local temp_scheme = box.schema.space.create('request_count', {
         if_not_exists = true,
         temporary = true,
-            model = {
-                ip = 1,
-                ts = 2,
-                cnt = 3,
-    },
+          
     })
 temp_scheme:format({
          {name = 'ip', type = 'string'},
