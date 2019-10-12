@@ -33,11 +33,18 @@ local temp_scheme = box.schema.space.create('request_count', {
                 cnt = 3,
     },
     })
+temp_scheme:format({
+         {name = 'ip', type = 'string'},
+         {name = 'ts', type = 'unsigned'},
+         {name = 'cnt', type = 'int'}
+         }
+)
 temp_scheme:create_index('primary', {
         type = 'hash',
-        parts = {request_count.model.ip, 'string', request_count.model.ts, 'unsigned'},
+        parts = {temp_scheme.ip, 'string', temp_scheme.ts, 'unsigned'},
         if_not_exists = true,
     })
+
 -- init kv-storage
 log.info('creating kv-storage...')
 local kv = storage.new(space)
@@ -52,8 +59,8 @@ log.info('creating http-handler...')
 local hdl  = handler.init(kv)
 
 -- init http-server
-local host = '127.0.0.1'
-local port = '8080'
+local host = '*'
+local port = '8081'
 local rps_lmt = 2
 if #arg > 0 then
 	host = arg[1]
@@ -76,7 +83,7 @@ local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
         local rows = temp_scheme.get_space():select({req.peer.host, ts})
-        if #rows ~= 0 and rows[1][temp_scheme.model.cnt] == rps_limit then
+        if #rows ~= 0 and rows[1][temp_scheme.cnt] == rps_limit then
             local resp = req:render({text = 'Too Many Requests'})
             resp.status = 429
             return resp
