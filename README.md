@@ -74,13 +74,12 @@ tarantool kv.lua 127.0.0.1 8080
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{SOME ARBITRARY JSON}`
+
  
 * **Error Response:**
 
   * **Code:** 404<br />
-    **Content:** `No such key`
-<br>
+ <br>
 
 **Create new key-value item**
 
@@ -103,21 +102,19 @@ tarantool kv.lua 127.0.0.1 8080
 * **Success Response:**
 
   * **Code:** 200 <br />
-    **Content:** `{"key": "KEY_NAME", "value": {SOME ARBITRARY JSON}}`
+
  
 * **Error Response:**
 
-  * **Code:** 400<br />
-    **Content:** `Invalid request body`
+* **Code:** 400<br />
+
+    OR
+
+* **Code:** 409<br />
     
     OR
 
-  * **Code:** 409<br />
-    **Content:** `Key already exists`
-    
-    OR
-
-  * **Code:** 429<br />
+* **Code:** 429<br />
     **Content:** `Too Many Requests`<br />
     *Note:* RPS limit = 2.
     
@@ -148,7 +145,7 @@ tarantool kv.lua 127.0.0.1 8080
 
 * **Success Response:**
 
-  * **Code:** 204 <br />
+  * **Code:** 200 <br />
  
 * **Error Response:**
 
@@ -183,12 +180,11 @@ tarantool kv.lua 127.0.0.1 8080
 
 * **Success Response:**
 
-  * **Code:** 204 <br />
+  * **Code:** 200 <br />
  
 * **Error Response:**
     
   * **Code:** 404<br />
-    **Content:** `No such key`
 
 
 
@@ -197,8 +193,6 @@ tarantool kv.lua 127.0.0.1 8080
 * **POST:**
 
     **Content:** `{
-  "body":
-  {
    "key": "test2",
     "value":
     {
@@ -207,20 +201,17 @@ tarantool kv.lua 127.0.0.1 8080
       "VVVV": 0.0,
       "GGGGG": 66
     }
-  }
 }`
 
 * **PUT:**
 
-    **Content:** `{
-  "body":
-  {
-    "value":
+    **Content:** `
     {
-      "DDDDD": "2dd2222",
-      "AAAAA": "wwwweee",
-      "VVVV": 0.0,
-      "GGGGG": 66
-    }
-  }
-}`    
+        "value":
+            {
+            "DDDDD": "2dd2222",
+            "AAAAA": "wwwweee",
+            "VVVV": 0.0,
+            "GGGGG": 66
+            }
+  }`    
