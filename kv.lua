@@ -71,7 +71,7 @@ end
 
 
 function tmp.get_space()
-    return box.space[temp_scheme.space_name]
+    return box.space[tmp.space_name]
 end
 
 
