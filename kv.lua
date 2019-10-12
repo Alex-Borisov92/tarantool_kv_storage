@@ -31,7 +31,7 @@ local temp_scheme = box.schema.space.create('request_count', {
     })
 temp_scheme:create_index('primary', {
         type = 'hash',
-        parts = {1, 'string', 2, 'unsigned', 3, 'number'},
+        parts = {'ip', 'string', 'ts', 'unsigned', 'cnt', 'number'},
         if_not_exists = true,
     })
 
@@ -72,7 +72,7 @@ end
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        
+
         local rows = temp_scheme.get_space():select(
                 {req.peer.host,
                  ts})
