@@ -3,11 +3,24 @@
 local KVStorage   = {}
 KVStorage.__index = KVStorage
 
+---@class temp_storage
+---@field protected space table
+local temp_storage   = {}
+temp_storage.__index = temp_storage
+
 setmetatable(KVStorage, {
 	__call = function(cls, ...)
 		return cls.new(...)
 	end,
 })
+
+setmetatable(temp_storage, {
+	__call = function(cls, ...)
+		return cls.new(...)
+	end,
+})
+
+
 
 --- Create new instance
 ---@param space table
@@ -17,6 +30,16 @@ function KVStorage.new(space)
 	self.space = space
 	return self
 end
+
+--- Create new TEMP instance
+---@param space table
+---@return temp_storage
+function temp_storage.new_t(space)
+	local self = setmetatable({}, temp_storage)
+	self.space = space
+	return self
+end
+
 
 --- Add value
 ---@param key string

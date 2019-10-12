@@ -47,7 +47,7 @@ local kv = storage.new(space)
 
 -- init temp-storage
 log.info('creating temp-storage...')
-local tmp = storage.new(temp_scheme)
+local tmp = storage.new_t(temp_scheme)
 
 -- init http-handler
 log.info('creating http-handler...')
@@ -74,21 +74,20 @@ function tmp.get_spc()
 end
 
 
-
-
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-        if tmp.get_spc():select({req.peer.host,ts}) then
-            if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
-                local resp = req:render({text = 'Too Many Requests'})
-                resp.status = 429
-                return resp
+        function limit()
+            if tmp.get_spc() then
+                if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
+                    local resp = req:render({text = 'Too Many Requests'})
+                    resp.status = 429
+                    return resp
+                end
             end
-
         end
-
-
+        pcall(limit)
+        end
         tmp.get_space():upsert({req.peer.host, ts, 1}, {{'+', tmp.cnt, 1}})
         return handler(req)
     end
