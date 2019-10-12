@@ -37,7 +37,7 @@ temp_scheme:format({
 )
 temp_scheme:create_index('primary', {
         type = 'hash',
-        parts = {temp_scheme.ip, 'string', temp_scheme.ts, 'unsigned'},
+        parts = {temp_scheme.ip, 'string', temp_scheme.ts, 'unsigned', temp_scheme.cnt, 'number'},
         if_not_exists = true,
     })
 
