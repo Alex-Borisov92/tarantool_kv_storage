@@ -69,7 +69,7 @@ function kv.get_space()
 end
 
 
-function tmp.get_space()
+function tmp.get_spc()
     return box.space[tmp.space_name]
 end
 
@@ -79,15 +79,7 @@ end
 local function limited_rps(handler, rps_limit)
     return function (req)
         local ts = os.time()
-
-        local rows = tmp.get_space():select
-        (
-                {
-                 req.peer.host,
-                 ts
-                }
-        )
-        if #rows ~= 0 and rows[1][tmp.cnt] == rps_limit then
+        if #(tmp.get_spc():select({req.peer.host,ts})) ~= 0 and tmp.get_spc():select({req.peer.host,ts})[1][tmp.cnt] == rps_limit then
             local resp = req:render({text = 'Too Many Requests'})
             resp.status = 429
             return resp
