@@ -2,6 +2,10 @@
 
 Key-value storage for Tarantool NoSQL database with HTTP API
 
+## Live demo
+```shell
+3.124.86.40:8081
+```
 ## Requirements
 * tarantool >=1.10 ```https://tarantool.io```<br />
     * Installation of Tarantool for Ubuntu:
