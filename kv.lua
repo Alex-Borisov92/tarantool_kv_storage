@@ -18,7 +18,11 @@ box.cfg {
 local space = box.schema.space.create('kv', {
 	field_count   = 2,
 	if_not_exists = true,
-	format        = { { name = 'key', type = 'string' }, { name = 'value', type = 'any' } }
+	format        = {
+	{ name = 'key', type = 'string' },
+	{ name = 'value', type = 'string' },
+    { name = 'amount', type = 'integer' },
+    }
 })
 space:create_index('primary', {
 	unique        = true,

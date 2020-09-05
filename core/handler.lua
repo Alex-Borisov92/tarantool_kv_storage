@@ -1,4 +1,6 @@
 local json    = require('json')
+local af      = require('core.af')
+
 
 ---@class Handler
 ---@field protected kv KVStorage
@@ -19,10 +21,10 @@ end
 ---@param status int
 ---@param body table
 ---@return table
-function Handler.rsp(status, body)
+function Handler.rsp(status, d)
 	return {
 		status = status,
-		body   = body,
+		body   = d,
 	}
 end
 
@@ -30,11 +32,13 @@ end
 ---@param req table
 ---@return table
 function Handler.get(req)
+	local data = pcall(req.json, req)
+	local scoring = pcall(af.scoring(data))
 	local value = Handler.kv:get(req:stash('id'))
 	if value == nil then
 		return Handler.rsp(404)
 	end
-	return Handler.rsp(200, json.encode(value))
+	return Handler.rsp(200, scoring)
 end
 
 --- Del value
@@ -53,6 +57,7 @@ end
 ---@return table
 function Handler.put(req)
 	local ok, data = pcall(req.json, req)
+	local scoring = pcall(af.scoring(data))
 	if not ok then
 		Handler.rsp(400)
 	end
@@ -63,7 +68,7 @@ function Handler.put(req)
 	if value == nil then
 		return Handler.rsp(404)
 	end
-	return Handler.rsp(200)
+	return Handler.rsp(200, scoring)
 end
 
 --- Post data
@@ -71,6 +76,7 @@ end
 ---@return table
 function Handler.post(req)
 	local ok, data = pcall(req.json, req)
+	local scoring = af.scoring(data)
 	if not ok then
 		return Handler.rsp(400)
 	end
@@ -81,7 +87,7 @@ function Handler.post(req)
 	if not ok then
 		return Handler.rsp(409)
 	end
-	return Handler.rsp(200)
+	return Handler.rsp(200, scoring)
 end
 
 return Handler
