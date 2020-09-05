@@ -6,8 +6,8 @@ function Af.scoring(info)
     rules ={}
     result = {}
     function rules.rule1()
-        if info.value then
-            if info.value == 'test' then
+        if info.value.card then
+            if info.value.card == 'test' then
                 return table.insert(result,'DENY')
             else
                 return table.insert(result,'ALLOW')
@@ -15,8 +15,8 @@ function Af.scoring(info)
         end
     end
     function rules.rule2()
-        if info.amount then
-                if info.amount > 5 then
+        if info.value.amount then
+                if info.value.amount > 5 then
                     return table.insert(result,'DENY')
                 else
                     return table.insert(result,'ALLOW')

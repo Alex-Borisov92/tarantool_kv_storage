@@ -15,15 +15,25 @@ box.cfg {
 	log_nonblock = true,
 	log_format   = 'plain',
 }
+
 local space = box.schema.space.create('kv', {
-	field_count   = 2,
+	field_count   = 4,
 	if_not_exists = true,
 	format        = {
-	{ name = 'key', type = 'string' },
-	{ name = 'value', type = 'string' },
+	{ name = 'extid', type = 'string' }, --TODO custom data mapping?
+	{ name = 'card', type = 'string' },
     { name = 'amount', type = 'integer' },
+    { name = 't', type = 'integer' },
     }
 })
+
+--box.execute("CREATE TABLE main (extid VARCHAR(10),t INTEGER ,card VARCHAR(100), amount INTEGER,
+--PRIMARY KEY (t, extid))")
+
+--box.execute("CREATE TABLE tester (s1 INT PRIMARY KEY, s2 VARCHAR(10))")
+
+
+
 space:create_index('primary', {
 	unique        = true,
 	if_not_exists = true,
