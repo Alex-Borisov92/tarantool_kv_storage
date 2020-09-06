@@ -1,4 +1,25 @@
----@class Hist
----@field protected kv KVStorage
-local Hist = { --TODO still unclear, module isnt free for us - need to buy it
-    }
+local box           = require('box')
+--in: event_info
+local Hist = {}
+--SQL like simple aggregate editor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+return Hist

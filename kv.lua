@@ -12,27 +12,37 @@ local os 	        = require('os')
 log.info('creating box-storage...')
 box.cfg {
 	log_level    = log.INFO,
-	log_nonblock = true,
+	--log_nonblock = true,
 	log_format   = 'plain',
 }
 
 local space = box.schema.space.create('kv', {
-	field_count   = 4,
+	field_count   = 1,
 	if_not_exists = true,
 	format        = {
-	{ name = 'extid', type = 'string' }, --TODO custom data mapping?
-	{ name = 'card', type = 'string' },
-    { name = 'amount', type = 'integer' },
-    { name = 't', type = 'integer' },
+	{ name = 'value', type = 'any' }, --TODO custom data mapping?
+	--{ name = 'card', type = 'string' },
+    --{ name = 'amount', type = 'integer' },
+    --{ name = 't', type = 'integer' },
     }
 })
 
---box.execute("CREATE TABLE main (extid VARCHAR(10),t INTEGER ,card VARCHAR(100), amount INTEGER,
---PRIMARY KEY (t, extid))")
+box.execute("CREATE TABLE main (_id VARCHAR(100), extid VARCHAR(10), t INT, card VARCHAR(100), amount INT,PRIMARY KEY (t, extid))")
 
 --box.execute("CREATE TABLE tester (s1 INT PRIMARY KEY, s2 VARCHAR(10))")
+--local sql_out = box.execute("select * from main")
+function tbl_print(tbl)
+    for k,v in pairs(tbl) do
+        if type(v) =='table' then
+            tbl_print(v)
+        else
+            print(k,v)
+        end
 
+    end
 
+end
+--tbl_print(sql_out)
 
 space:create_index('primary', {
 	unique        = true,
@@ -58,7 +68,7 @@ local hdl  = handler.init(kv)
 -- init http-server
 local host = '*'
 local port = '8081'
-local rps_lmt = 2
+local rps_lmt = 100
 if #arg > 0 then
 	host = arg[1]
 end
@@ -114,10 +124,10 @@ local server = srv.new(host, port,{ log_requests = true })
 local httpd = router.new()
 server:set_router(httpd)
 
-httpd:route({ path = '/kv/:id', method = 'GET' }, limited_rps(hdl.get,2))
-httpd:route({ path = '/kv/:id', method = 'DELETE' }, limited_rps(hdl.del,2))
-httpd:route({ path = '/kv/:id', method = 'PUT' },limited_rps(hdl.put,2))
-httpd:route({ path = '/kv', method = 'POST' },limited_rps(hdl.post,2))
+httpd:route({ path = '/kv/:id', method = 'GET' }, limited_rps(hdl.get,rps_lmt))
+httpd:route({ path = '/kv/:id', method = 'DELETE' }, limited_rps(hdl.del,rps_lmt))
+httpd:route({ path = '/kv/:id', method = 'PUT' },limited_rps(hdl.put,rps_lmt))
+httpd:route({ path = '/kv', method = 'POST' },limited_rps(hdl.post,rps_lmt))
 httpd:hook('after_dispatch', function(req, rsp)
 	-- log all correct operations
 	log.info(string.format("%s %s %s %s %s", rsp.status, req.method, req.path, req:read_cached()),req.peer.host)

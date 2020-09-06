@@ -1,6 +1,9 @@
 local json    = require('json')
 local af      = require('core.af')
---local hist 	  = require('core.hist')
+local uuid    = require('uuid')
+local hist 	  = require('core.hist')
+local box 	  = require('box')
+local os 	  = require('os')
 
 
 ---@class Handler
@@ -75,21 +78,33 @@ end
 --- Post event_info
 ---@param req table
 ---@return table
-function Handler.post(req)
+function Handler.post(req) --todo bad impelementation. need to write separate module for SQL?
+	local function add_to_sql_bd(id, card,amount,t,extid) --todo dynamic aggrs?
+		if card and amount and extid and t and id then
+			print('Data in sql bd has been added.')
+			return box.execute("INSERT INTO main VALUES ("..id..", "..extid ..", "..t..","..card..","..amount ..")") -- first prototype. TODO rewrite
+
+		end
+	end
 	local ok, event_info = pcall(req.json, req)
+	event_info.t = os.time()
+	event_info.id = uuid.str()
+	--table.insert(event_info, { ['t'] = os.time()}) --TODO temprorary
 	--local history_info = hist.compute(event_info)
 	--local event_info = table.insert(event_info, history_info)
+
 	local scoring = af.scoring(event_info)
 	if not ok then
 		return Handler.rsp(400)
 	end
-	if event_info['key'] == nil or event_info['value'] == nil then
+	if event_info['value'] == nil then
 		return Handler.rsp(400)
 	end
-	local ok = Handler.kv:add(event_info['key'], event_info['value'])
+	local ok = Handler.kv:add(event_info.id, event_info['value'])
 	if not ok then
 		return Handler.rsp(409)
 	end
+	add_to_sql_bd(event_info.id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
 	return Handler.rsp(200, scoring)
 end
 
