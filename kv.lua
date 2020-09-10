@@ -12,7 +12,7 @@ local os 	        = require('os')
 log.info('creating box-storage...')
 box.cfg {
 	log_level    = log.INFO,
-	--log_nonblock = true,
+	--log_nonblock = true, TODO investigate why this parameter has been outdated
 	log_format   = 'plain',
 }
 
@@ -27,7 +27,7 @@ local space = box.schema.space.create('kv', {
     }
 })
 
-box.execute("CREATE TABLE main (_id VARCHAR(100), extid VARCHAR(10), t INT, card VARCHAR(100), amount INT,PRIMARY KEY (t, extid))")
+box.execute("CREATE TABLE main (_id VARCHAR(100), extid VARCHAR(10), t INT, card VARCHAR(100), amount INT,PRIMARY KEY (t, card))")
 
 --box.execute("CREATE TABLE tester (s1 INT PRIMARY KEY, s2 VARCHAR(10))")
 --local sql_out = box.execute("select * from main")

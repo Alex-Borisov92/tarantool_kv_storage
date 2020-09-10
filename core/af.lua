@@ -22,14 +22,15 @@ function Af.scoring(info)
                     return table.insert(result,'ALLOW')
                 end
         end
-     end
+    end
     for _, f in pairs(rules) do
        pcall(f)
     end
     for _, r in pairs(result) do
         if r =='DENY' then
             return r 
-        end--=DENY
+        end
+
     end
 
   return 'ALLOW'

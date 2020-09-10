@@ -79,7 +79,7 @@ end
 ---@param req table
 ---@return table
 function Handler.post(req) --todo bad impelementation. need to write separate module for SQL?
-	local function add_to_sql_bd(id, card,amount,t,extid) --todo dynamic aggrs?
+	local function add_to_sql_bd(id, card,amount,t,extid) --todo dynamic aggrs? what about data mapping?
 		if card and amount and extid and t and id then
 			print('Data in sql bd has been added.')
 			return box.execute("INSERT INTO main VALUES ("..id..", "..extid ..", "..t..","..card..","..amount ..")") -- first prototype. TODO rewrite
@@ -87,11 +87,13 @@ function Handler.post(req) --todo bad impelementation. need to write separate mo
 		end
 	end
 	local ok, event_info = pcall(req.json, req)
+
+
 	event_info.t = os.time()
-	event_info.id = uuid.str()
-	--table.insert(event_info, { ['t'] = os.time()}) --TODO temprorary
-	--local history_info = hist.compute(event_info)
-	--local event_info = table.insert(event_info, history_info)
+	event_info._id = uuid.str()
+
+	local history_info = hist.compute(event_info)
+	local event_info = table.insert(event_info, history_info)
 
 	local scoring = af.scoring(event_info)
 	if not ok then
@@ -104,7 +106,13 @@ function Handler.post(req) --todo bad impelementation. need to write separate mo
 	if not ok then
 		return Handler.rsp(409)
 	end
-	add_to_sql_bd(event_info.id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
+	if ok then
+		add_to_sql_bd(event_info.id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
+	else
+		return error('Adding data to SQL table has been failed')
+	end
+
+
 	return Handler.rsp(200, scoring)
 end
 
