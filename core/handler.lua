@@ -5,6 +5,7 @@ local hist 	  = require('core.hist')
 local box 	  = require('box')
 local os 	  = require('os')
 local log 	  = require('log')
+local utils   = require('core.utils')
 
 ---@class Handler
 ---@field protected kv KVStorage
@@ -79,23 +80,22 @@ end
 ---@param req table
 ---@return table
 function Handler.post(req) --todo bad impelementation. need to write separate module for SQL?
+	--TODO this function is overloaded by backend logic - need to rewrite and leave ONLY post function!
 	local function add_to_sql_bd(id, card,amount,t,extid) --todo dynamic aggrs? what about data mapping?
 		if card and amount and extid and t and id then
 			print('Data in sql bd has been added.')
-			return box.execute("INSERT INTO main VALUES ("..id..", "..extid ..", "..t..","..card..","..amount ..")") -- first prototype. TODO rewrite
+			local statement = "INSERT INTO main1 VALUES ('"..id.."', '"..extid .."', "..t..", '"..card.."', "..amount ..")"
+			box.execute(statement) -- first prototype. TODO rewrite
 
+		--tbl_print(r)
 		end
 	end
 	local ok, event_info = pcall(req.json, req)
 
-
-	event_info.t = os.time()
+	event_info.t = os.time() * 1000--time in milliseconds
 	event_info._id = uuid.str()
-
 	local history_info = hist.compute(event_info)
-	print('len of history_info='..tostring(#history_info))
-	--local event_info = table.insert(event_info, history_info)
-
+	table.insert(event_info, history_info) --TODO investigate why it has path ...[1]['history'].
 	local scoring = af.scoring(event_info)
 	if not ok then
 		return Handler.rsp(400)

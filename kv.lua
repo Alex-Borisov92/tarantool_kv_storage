@@ -6,7 +6,7 @@ local handler       = require('core.handler')
 local srv  	        = require('http.server')
 local router        = require('http.router')
 local os 	        = require('os')
-
+local utils         = require('core.utils')
 
 -- init storage
 log.info('creating box-storage...')
@@ -26,13 +26,13 @@ local space = box.schema.space.create('kv', {
     --{ name = 't', type = 'integer' },
     }
 })
-
-box.execute("CREATE TABLE main (_id VARCHAR(100), extid VARCHAR(10), t INT, card VARCHAR(100), amount INT,PRIMARY KEY (t, card))")
+--TODO investigate - how to inicializate SQL storage correctly?
+box.execute("CREATE TABLE main1 (_id VARCHAR(100), extid VARCHAR(10), t INT, card VARCHAR(100), amount INT,PRIMARY KEY (t, card))")
 
 --local statement = "SELECT COUNT("..h[_id]..") FROM main WHERE card=="..h.value.card.."and t>="..tostring((h.t - 60*60*24))
-local statement = 'SELECT * FROM main'
-local sql_out = box.execute(statement) -- TODO document?
--[[ sql_out - structure
+--local statement = 'SELECT * FROM main'
+--local sql_out = box.execute(statement) -- TODO document?
+--[[ sql_out - structure
 table=metadata
 table=1
 name    EXTID
@@ -47,22 +47,9 @@ table=4
 name    AMOUNT
 type    integer
 table=rows
-
 ]]
-function tbl_print(tbl)
-    for k,v in pairs(tbl) do
-        if type(v) =='table' then
-            print('table='..tostring(k))
-            tbl_print(v)
-        else
-            print(k,v)
-        end
 
-    end
 
-end
---tbl_print(sql_out)
-print(sql_out["rows"][1][1]) --1       ['123', 1, 'test', 777] --'123' expected
 
 
 space:create_index('primary', {
