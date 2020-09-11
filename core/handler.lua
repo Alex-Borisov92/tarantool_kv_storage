@@ -4,7 +4,7 @@ local uuid    = require('uuid')
 local hist 	  = require('core.hist')
 local box 	  = require('box')
 local os 	  = require('os')
-
+local log 	  = require('log')
 
 ---@class Handler
 ---@field protected kv KVStorage
@@ -93,7 +93,8 @@ function Handler.post(req) --todo bad impelementation. need to write separate mo
 	event_info._id = uuid.str()
 
 	local history_info = hist.compute(event_info)
-	local event_info = table.insert(event_info, history_info)
+	print('len of history_info='..tostring(#history_info))
+	--local event_info = table.insert(event_info, history_info)
 
 	local scoring = af.scoring(event_info)
 	if not ok then
@@ -102,12 +103,13 @@ function Handler.post(req) --todo bad impelementation. need to write separate mo
 	if event_info['value'] == nil then
 		return Handler.rsp(400)
 	end
-	local ok = Handler.kv:add(event_info.id, event_info['value'])
+	local ok = Handler.kv:add(event_info._id, event_info['value']) --TODO change local variable?
 	if not ok then
 		return Handler.rsp(409)
 	end
 	if ok then
-		add_to_sql_bd(event_info.id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
+		add_to_sql_bd(event_info._id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
+		log.info('Data in SQL BD has been added successfully.')
 	else
 		return error('Adding data to SQL table has been failed')
 	end
