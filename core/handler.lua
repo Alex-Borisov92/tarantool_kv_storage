@@ -1,11 +1,13 @@
-local json    = require('json')
-local af      = require('core.af')
-local uuid    = require('uuid')
-local hist 	  = require('core.hist')
-local box 	  = require('box')
-local os 	  = require('os')
-local log 	  = require('log')
-local utils   = require('core.utils')
+local json    		= require('json')
+local af      		= require('core.af')
+local uuid    		= require('uuid')
+local hist 	  		= require('core.hist')
+local box 	  		= require('box')
+local os 	  		= require('os')
+local log 	  		= require('log')
+local utils   		= require('core.utils')
+local emaker 		= require('core.eventmaker')
+local sql 			= require('core.sql_router')
 
 ---@class Handler
 ---@field protected kv KVStorage
@@ -26,24 +28,36 @@ end
 ---@param status int
 ---@param d table
 ---@return table
-function Handler.rsp(status, d)
-	return {
-		status = status,
-		body   = json.encode({['action'] = d}), --TODO reformat response
-	}
+function Handler.rsp(status, data)
+	----POST
+	if status == 200 then
+		return
+			{
+			status = status,
+			body   = json.encode({['action'] 	= data.scoring.action,
+								  ['reasons'] 	= data.scoring.reasons,
+								  ['_id']		= data._id,
+								  ['_t']		= data.t
+
+			}),
+		}
+	else
+		return { --TODO write structure for other statuses
+			status = status,
+			--body   = json.encode({['action'] = data}),
+		}
+	end
 end
 
 --- Get value
 ---@param req table
 ---@return table
 function Handler.get(req)
-	local event_info = pcall(req.json, req)
-	local scoring = pcall(af.scoring(event_info))
 	local value = Handler.kv:get(req:stash('id'))
 	if value == nil then
 		return Handler.rsp(404)
 	end
-	return Handler.rsp(200, scoring)
+	return Handler.rsp(203) --TODO don't forget to write docs about changes
 end
 
 --- Del value
@@ -54,7 +68,7 @@ function Handler.del(req)
 	if value == nil then
 		return Handler.rsp(404)
 	end
-	return Handler.rsp(200)
+	return Handler.rsp(202) --TODO don't forget to write docs about changes
 end
 
 --- Put value
@@ -73,49 +87,37 @@ function Handler.put(req)
 	if value == nil then
 		return Handler.rsp(404)
 	end
-	return Handler.rsp(200, scoring)
+	return Handler.rsp(201, scoring) --TODO don't forget to write docs about changes
 end
 
 --- Post event_info
 ---@param req table
 ---@return table
-function Handler.post(req) --todo bad impelementation. need to write separate module for SQL?
-	--TODO this function is overloaded by backend logic - need to rewrite and leave ONLY post function!
-	local function add_to_sql_bd(id, card,amount,t,extid) --todo dynamic aggrs? what about data mapping?
-		if card and amount and extid and t and id then
-			print('Data in sql bd has been added.')
-			local statement = "INSERT INTO main1 VALUES ('"..id.."', '"..extid .."', "..t..", '"..card.."', "..amount ..")"
-			box.execute(statement) -- first prototype. TODO rewrite
+function Handler.post(req)
+	local ok, src = pcall(req.json, req)
 
-		--tbl_print(r)
-		end
-	end
-	local ok, event_info = pcall(req.json, req)
-
-	event_info.t = os.time() * 1000--time in milliseconds
-	event_info._id = uuid.str()
-	local history_info = hist.compute(event_info)
-	table.insert(event_info, history_info) --TODO investigate why it has path ...[1]['history'].
-	local scoring = af.scoring(event_info)
 	if not ok then
 		return Handler.rsp(400)
 	end
-	if event_info['value'] == nil then
+
+	if src['value'] == nil then
 		return Handler.rsp(400)
 	end
-	local ok = Handler.kv:add(event_info._id, event_info['value']) --TODO change local variable?
-	if not ok then
+
+	local event = emaker.make_post(src)
+	local scoring = af.make_scoring(event)
+	event.scoring = scoring
+	local add = Handler.kv:add(event._id, event) --TODO change local variable?
+
+	if not add then
 		return Handler.rsp(409)
 	end
-	if ok then
-		add_to_sql_bd(event_info._id, event_info.value.card,event_info.value.amount,event_info.t, event_info.value.extid)
-		log.info('Data in SQL BD has been added successfully.')
-	else
-		return error('Adding data to SQL table has been failed')
+
+	if add then
+		sql.sql_post(event)
 	end
 
-
-	return Handler.rsp(200, scoring)
+	return Handler.rsp(200, event)
 end
 
 return Handler
